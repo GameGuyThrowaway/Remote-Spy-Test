@@ -4,7 +4,7 @@ local task_spawn = task.spawn
 
 local blockedList, ignoredList -- initialize variables, later to be used to point to the real tables
 
-local addCall2, updateReturnValue2;
+local addCall2, updateReturnValue2
 
 local function addCall(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack)
     -- send to core module here, or make addCall be in core module
@@ -159,8 +159,7 @@ if not _G.remoteSpyHookedState then
     local function sanitizeData(data, depth: number, deSanitizePaths) -- this replaces unsafe indices, checks for cyclics, or stack overflow attemps, and clonerefs all instances
         if depth > 298 then return false end
 
-        local originalDepth: number = depth
-        local depthIncreased: boolean = false
+        local deadCall: boolean = false
 
         local first: boolean = false
         if not deSanitizePaths then
@@ -169,15 +168,17 @@ if not _G.remoteSpyHookedState then
         end
 
         for i, v in next, data do
-            if not depthIncreased then
-                depthIncreased = true
-                originalDepth += 1
-                depth += 1
-            end
 
             local valueType: string = typeof(v)
             if valueType == "table" then
-                sanitizeData(v, originalDepth, deSanitizePaths)
+                if sanitizeData(v, depth+1, deSanitizePaths) ~= false then -- sanitize, but check for stack overflow/cyclic
+                    if not first then
+                        return false
+                    else
+                        deadCall = true
+                        break
+                    end
+                end
             elseif valueType == "Instance" then -- this is variation added after the fact.  Originally I just added this sanitzation for clearing out unsafe indices, but now it's going to be modified to do more.
                 
                 local dataReadOnly: boolean = isreadonly(data)
@@ -246,7 +247,11 @@ if not _G.remoteSpyHookedState then
         end
         
         if first then
-            return deSanitizePaths
+            if deadCall then
+                return false, deSanitizePaths
+            else
+                return true, deSanitizePaths
+            end
         end
     end
 
@@ -305,13 +310,13 @@ if not _G.remoteSpyHookedState then
 
                 if not isRemoteIgnored then
                     data = {...}
-                    local deSanitizePaths = sanitizeData(data, -1)
-                    if deSanitizePaths then
+                    local success, deSanitizePaths = sanitizeData(data, -1)
+                    if success then
                         local scr = getcallingscript()
                         mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
                         argChannel:Fire(unpack(data, 1, argSize))
-                        desanitizeData(deSanitizePaths)
                     end
+                    desanitizeData(deSanitizePaths)
                 end
 
                 if isRemoteBlocked then
@@ -343,8 +348,8 @@ if not _G.remoteSpyHookedState then
                     local returnKey = channelKey.."|"..callCount
 
                     data = {...}
-                    local deSanitizePaths = sanitizeData(data, -1)
-                    if deSanitizePaths then
+                    local success, deSanitizePaths = sanitizeData(data, -1)
+                    if success then
                         local scr = getcallingscript()
                         mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
                         argChannel:Fire(unpack(data, 1, argSize))
@@ -367,6 +372,7 @@ if not _G.remoteSpyHookedState then
                             return coroutine_yield()
                         end
                     else
+                        desanitizeData(deSanitizePaths)
                         if isRemoteBlocked then
                             return
                         end
@@ -403,14 +409,14 @@ if not _G.remoteSpyHookedState then
 
                     if not isRemoteIgnored then
                         local data = {...}
-                        local deSanitizePaths = sanitizeData(data, -1)
+                        local success, deSanitizePaths = sanitizeData(data, -1)
                         
-                        if deSanitizePaths then
+                        if success then
                             local scr = getcallingscript()
                             mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
                             argChannel:Fire(unpack(data, 1, argSize))
-                            desanitizeData(deSanitizePaths)
                         end
+                        desanitizeData(deSanitizePaths)
                     end
                     
                     if isRemoteBlocked then
@@ -431,8 +437,8 @@ if not _G.remoteSpyHookedState then
                         local returnKey = channelKey.."|"..callCount
 
                         local data = {...}
-                        local deSanitizePaths = sanitizeData(data, -1)
-                        if deSanitizePaths then
+                        local success, deSanitizePaths = sanitizeData(data, -1)
+                        if success then
                             local scr = getcallingscript()
                             mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
                             argChannel:Fire(unpack(data, 1, argSize))
@@ -456,6 +462,7 @@ if not _G.remoteSpyHookedState then
                                 return coroutine_yield()
                             end
                         else
+                            desanitizeData(deSanitizePaths)
                             if isRemoteBlocked then
                                 return
                             end
