@@ -49,7 +49,7 @@ function SettingsModule.loadSettings()
     end
 
     local tempSettings = httpService:JSONDecode(readfile("wavespy/Settings.json"))
-    for i,v in tempSettings do -- this is in case I add new settings
+    for i,v in next, tempSettings do -- this is in case I add new settings
         if type(Settings[i]) == type(v) then
             Settings[i] = v
         end
