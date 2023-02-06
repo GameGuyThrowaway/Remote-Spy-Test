@@ -4,12 +4,14 @@ local task_spawn = task.spawn
 
 local blockedList, ignoredList -- initialize variables, later to be used to point to the real tables
 
+local addCall2, updateReturnValue2;
+
 local function addCall(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack)
-    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. argCount .. " | " .. tostring(returnValueKey))
     -- send to core module here, or make addCall be in core module
+    addCall2(remote, remoteID, returnValueKey, callingScript, callStack, args, argCount)
 end
 local function updateReturnValue(returnValue, returnCount: number, returnValueKey: string)
-    rconsolewarn("RETVAL: " .. returnCount .. " | " .. returnValueKey)
+    updateReturnValue2(returnValueKey, returnValue, returnCount)
 end
 
 local metadata -- this is used to store metadata while the args are still being sent, due to a BindableEvent limitation, I need to split metadata from args
@@ -481,9 +483,11 @@ local function handleActor(actor: Actor)
     syn.run_on_actor(actor, hookCode, argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber.. "|" .. CallStackLimit)
 end
 
-function Backend.initiateModule(BlockedList, IgnoredList, CallStackLimit)
+function Backend.initiateModule(BlockedList, IgnoredList, CallStackLimit, lgc, urv)
     ignoredList = IgnoredList
     blockedList = BlockedList
+    addCall2 = lgc
+    updateReturnValue2 = urv
 
     syn.on_actor_created:Connect(handleActor)
 
