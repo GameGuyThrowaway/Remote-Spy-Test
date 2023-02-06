@@ -12,9 +12,8 @@ local get_debug_id = game.GetDebugId
 local set_thread_identity = syn.set_thread_identity
 local get_thread_identity= syn.get_thread_identity
 
-local Settings, InlineSettings, CallStackSettings; -- Table of current user settings
-local tableToString, getInstancePath; -- localize function
-
+local Settings, InlineSettings, CallStackSettings -- Table of current user settings
+local tableToString, getInstancePath -- localize function
 
 
 local Players = cloneref(game:GetService("Players"))
@@ -70,7 +69,7 @@ local makeUserdataConstructor = {
         return "BrickColor.new(\"" .. original.Name .. "\")"
     end,
     CatalogSearchParams = function(original: CatalogSearchParams): string
-        return str_format("(function() local clone: CatalogSearchParams = CatalogSearchParams.new(); clone.AssetTypes = %s; clone.BundleTimes = %s; clone.CategoryFilter = %s; clone.MaxPrice = %s; clone.MinPrice = %s; clone.SearchKeyword = %s; clone.SortType = %s; return clone end)()", tostring(original.AssetTypes), tostring(original.BundleTypes), tostring(original.CategoryFilter), original.MaxPrice, original.MinPrice, original.SearchKeyword, tostring(original.SortType))
+        return str_format("(function() local clone: CatalogSearchParams = CatalogSearchParams.new() clone.AssetTypes = %s clone.BundleTimes = %s clone.CategoryFilter = %s clone.MaxPrice = %s clone.MinPrice = %s clone.SearchKeyword = %s clone.SortType = %s return clone end)()", tostring(original.AssetTypes), tostring(original.BundleTypes), tostring(original.CategoryFilter), original.MaxPrice, original.MinPrice, original.SearchKeyword, tostring(original.SortType))
     end,
     CFrame = function(original: CFrame): string
         return "CFrame.new(" .. tostring(original) .. ")"
@@ -136,7 +135,7 @@ local makeUserdataConstructor = {
         return "FloatCurveKey.new(" .. tostring(original.Time) .. ", " .. tostring(original.Value) .. ", "  .. tostring(original.Interpolation) .. ")"
     end,
     Font = function(original: Font): string
-        return str_format("(function() local clone: Font = Font.new(%s, %s, %s); clone.Bold = %s; return clone end)()", '"' .. original.Family .. '"', tostring(original.Weight), tostring(original.Style), tostring(original.Bold))
+        return str_format("(function() local clone: Font = Font.new(%s, %s, %s) clone.Bold = %s return clone end)()", '"' .. original.Family .. '"', tostring(original.Weight), tostring(original.Style), tostring(original.Bold))
     end,
     Instance = function(original: Instance): string
         return getInstancePath(original)
@@ -151,7 +150,7 @@ local makeUserdataConstructor = {
         return "NumberSequenceKeypoint.new(" .. tostring(original.Time) .. ", " .. tostring(original.Value) .. ", " .. tostring(original.Envelope) .. ")"
     end,
     OverlapParams = function(original: OverlapParams): OverlapParams
-        return str_format("(function(): OverlapParams local clone: OverlapParams = OverlapParams.new(); clone.CollisionGroup = %s; clone.FilterDescendantInstances = %s; clone.FilterType = %s; clone.MaxParts = %s; return clone end)()", original.CollisionGroup, tableToString(original.FilterDescendantsInstances, false, Settings.InstanceTrackerMode), tostring(original.FilterType), tostring(original.MaxParts))
+        return str_format("(function(): OverlapParams local clone: OverlapParams = OverlapParams.new() clone.CollisionGroup = %s clone.FilterDescendantInstances = %s clone.FilterType = %s clone.MaxParts = %s return clone end)()", original.CollisionGroup, tableToString(original.FilterDescendantsInstances, false, Settings.InstanceTrackerMode), tostring(original.FilterType), tostring(original.MaxParts))
     end,
     PathWaypoint = function(original: PathWaypoint): string
         return "PathWaypoint.new(Vector3.new(" .. tostring(original.Position) .. "), " .. tostring(original.Action) .. ")"
@@ -166,10 +165,10 @@ local makeUserdataConstructor = {
         return "Ray.new(Vector3.new(" .. tostring(original.Origin) .. "), Vector3.new(" .. tostring(original.Direction) .. "))"
     end,
     RaycastParams = function(original: RaycastParams): string
-        return str_format("(function(): RaycastParams local clone: RaycastParams = RaycastParams.new(); clone.CollisionGroup = %s; clone.FilterDescendantsInstances = %s; clone.FilterType = %s; clone.FilterWater = %s; return clone end)()", original.CollisionGroup, tableToString(original.FilterDescendantsInstances, false, Settings.InstanceTrackerMode), tostring(original.FilterType), tostring(original.IgnoreWater))
+        return str_format("(function(): RaycastParams local clone: RaycastParams = RaycastParams.new() clone.CollisionGroup = %s clone.FilterDescendantsInstances = %s clone.FilterType = %s clone.FilterWater = %s return clone end)()", original.CollisionGroup, tableToString(original.FilterDescendantsInstances, false, Settings.InstanceTrackerMode), tostring(original.FilterType), tostring(original.IgnoreWater))
     end,
     RaycastResult = function(original: RaycastResult): string
-        return str_format("(function(): RaycastParams local params: RaycastParams = RaycastParams.new(); params.IgnoreWater = %s; params.FilterType = %s; params.FilterDescendantsInstances = %s; local startPos: Vector3 = %s; return workspace:Raycast(startPos, CFrame.lookAt(startPos, %s).LookVector*math.ceil(%s), params) end)()", tostring(original.Material.Name ~= "Water"), tostring(Enum.RaycastFilterType.Whitelist), tableToString(original.Instance, false, Settings.InstanceTrackerMode), "Vector3.new(" .. original.Position+(original.Distance*original.Normal) .. ")", "Vector3.new(" .. original.Position .. ")", "Vector3.new(" .. original.Distance .. ")")
+        return str_format("(function(): RaycastParams local params: RaycastParams = RaycastParams.new() params.IgnoreWater = %s params.FilterType = %s params.FilterDescendantsInstances = %s local startPos: Vector3 = %s return workspace:Raycast(startPos, CFrame.lookAt(startPos, %s).LookVector*math.ceil(%s), params) end)()", tostring(original.Material.Name ~= "Water"), tostring(Enum.RaycastFilterType.Whitelist), tableToString(original.Instance, false, Settings.InstanceTrackerMode), "Vector3.new(" .. original.Position+(original.Distance*original.Normal) .. ")", "Vector3.new(" .. original.Position .. ")", "Vector3.new(" .. original.Distance .. ")")
     end,
     RBXScriptConnection = function(original: RBXScriptConnection): string
         return "nil --[[ RBXScriptConnection is Unsupported ]]"
@@ -426,7 +425,7 @@ function PseudocodeGenerator.initiateModule(settingsModule)
     end
 end
 
-PseudocodeGenerator.getInstancePath = getInstancePath;
+PseudocodeGenerator.getInstancePath = getInstancePath
 
 function PseudocodeGenerator.generatePseudocode(remote: Instance, call)
     local watermark = Settings.PseudocodeWatermark and watermarkString or ""
@@ -626,45 +625,5 @@ function PseudocodeGenerator.generatePseudoCallStack(callStack)
     
     return (str_sub(callStackString, 1, -2) .. "\n}") -- get rid of the last "," and replace with \n}
 end
-
---[[
-PseudocodeGenerator.initiateModule({
-    Settings = {
-        FireServer = true,
-        InvokeServer = true,
-
-        GetCallStack = false,
-        CallStackSizeLimit = 10,
-        MakeCallingScriptUseCallStack = false,
-        CallStackOptions = {
-            Script = true,
-            Type = true,
-            LineNumber = true,
-            FunctionName = true,
-
-            ParameterCount = false,
-            IsVararg = false,
-            UpvalueCount = false
-        },
-
-        PseudocodeLuaUTypes = false,
-        PseudocodeWatermark = true,
-        PseudocodeFormatTables = true,
-        PsuedocodeHiddenNils = false,
-        PseudocodeInlining = {
-            boolean = false,
-            number = false,
-            string = false,
-            table = true,
-            userdata = true,
-
-            Remote = false,
-            HiddenNils = false
-        }
-    }
-})
-
-local str = PseudocodeGenerator.generatePseudoCallStack(_G.test)
-setclipboard(str)]]
 
 return PseudocodeGenerator
