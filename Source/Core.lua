@@ -7,8 +7,6 @@
 ]]
 
 local require = ...
-warn(require)
-warn(...)
 --local interface = require("Interface.lua")
 local backend = require("Backend.lua")
 local pseudocodeGenerator = require("PseudocodeGenerator.lua")
