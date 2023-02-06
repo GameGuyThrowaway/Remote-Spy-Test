@@ -63,7 +63,7 @@ local function updateReturnValue(returnValueKey: string, returnValue, returnCoun
 end 
 
 do -- initialize
---[[
+    --[[
     -- send data to modules (could swap this out with just a function call because it isn't object oriented) 
     interface.EventPipe:ListenToEvent('onGetRemoteList', function() 
         return remoteList
@@ -137,9 +137,12 @@ do -- initialize
     backend.EventPipe:ListenToEvent('onReturnValueUpdated', function(returnData, returnCount:number, returnKey: string) 
         local call = updateReturnValue(returnKey, returnData, returnCount)
         interface.EventPipe:Fire('onReturnValueUpdated', call)
-    end)]] -- EventPipe not added yet
+    end)
+    ]] -- EventPipe not added yet
 
     settingsModule.loadSettings()
     pseudocodeGenerator.initiateModule(settingsModule)
     backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit)
+
+    setclipboard(pseudocodeGenerator.getInstancePath(Instance.new("RemoteEvent", game.Players.LocalPlayer.Character)))
 end
