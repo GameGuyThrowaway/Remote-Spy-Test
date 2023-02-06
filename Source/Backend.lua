@@ -5,7 +5,7 @@ local task_spawn = task.spawn
 local blockedList, ignoredList -- initialize variables, later to be used to point to the real tables
 
 local function addCall(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack)
-    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. argCount .. " | " .. returnValueKey)
+    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. argCount .. " | " .. tostring(returnValueKey))
     -- send to core module here, or make addCall be in core module
 end
 local function updateReturnValue(returnValue, returnCount: number, returnValueKey: string)
