@@ -501,6 +501,4 @@ function Backend.sendCommand(command: string, ...)
     mainChannel:Fire("0", "-1", command, ...)
 end
 
-Backend.initiateModule({}, {}, 10)
-
 return Backend
