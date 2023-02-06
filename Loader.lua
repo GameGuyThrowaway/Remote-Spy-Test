@@ -1,6 +1,5 @@
-local loader = "https://raw.githubusercontent.com/GameGuyThrowaway/Synapse-V2-Remotespy/main/Loader.lua"
-
-local mainSourceFolder = "https://raw.githubusercontent.com/GameGuyThrowaway/Synapse-V2-Remotespy/main/Source/"
+local mainSourceFolder = "https://raw.githubusercontent.com/GameGuyThrowaway/Remotespy-Test/main/Source/"
+local coreModule = mainSourceFolder .. "Core.lua"
 
 local loadedModules = {}
 local function require(moduleName)
@@ -14,4 +13,4 @@ local function require(moduleName)
     end
 end
 
-loadstring(game:HttpGetAsync(loader))(require) -- load core, passing require function
+loadstring(game:HttpGetAsync(coreModule))(require) -- load core, passing require function
