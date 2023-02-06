@@ -50,6 +50,9 @@ local function logCall(remote: Instance, remoteID: string, returnValueKey: strin
         table.insert(listEntry.Calls, call)
     end
 
+    
+    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. argCount .. " | " .. tostring(returnValueKey))
+
     return call
 end
 
@@ -59,6 +62,8 @@ local function updateReturnValue(returnValueKey: string, returnValue, returnCoun
     callEntry.ReturnValue = returnValue
     callEntry.ReturnCount = returnCount
     returnValuePointerList[returnValueKey] = nil
+
+    rconsolewarn("RETVAL: " .. returnCount .. " | " .. returnValueKey)
     return callEntry
 end 
 
@@ -142,7 +147,5 @@ do -- initialize
 
     settingsModule.loadSettings()
     pseudocodeGenerator.initiateModule(settingsModule)
-    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit)
-
-    setclipboard(pseudocodeGenerator.getInstancePath(Instance.new("RemoteEvent", game.Players.LocalPlayer.Character)))
+    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit, logCall, updateReturnValue)
 end
