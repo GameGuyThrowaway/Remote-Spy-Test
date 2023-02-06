@@ -9,7 +9,7 @@ local function addCall(args, argCount: number, remote: Instance, remoteID: strin
     -- send to core module here, or make addCall be in core module
 end
 local function updateReturnValue(returnValue, returnCount: number, returnValueKey: string)
-    print(returnValueKey .. " updated return value to: " .. tostring(returnValue[1]))
+    rconsolewarn("RETVAL: " .. returnCount .. " | " .. returnValueKey)
 end
 
 local metadata -- this is used to store metadata while the args are still being sent, due to a BindableEvent limitation, I need to split metadata from args
