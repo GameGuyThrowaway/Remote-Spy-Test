@@ -60,7 +60,7 @@ function SettingsModule.saveSettings()
     if not isfolder("wavespy") then
         makefolder("wavespy")
     end
-    writefileasync("wavespy/Settings.json", httpService:JSONEncode(Settings))
+    writefile("wavespy/Settings.json", httpService:JSONEncode(Settings))
 end
 
 return SettingsModule
