@@ -1,7 +1,7 @@
-local mainSourceFolder = "https://raw.githubusercontent.com/GameGuyThrowaway/Remotespy-Test/main/Source/"
+local mainSourceFolder = "https://raw.githubusercontent.com/GameGuyThrowaway/Remote-Spy-Test/main/Source/"
 local coreModule = mainSourceFolder .. "Core.lua"
 
-local loadedModules = {}
+local loadedModules = {} -- used for caching loaded modules so that a module can be required twice and the same table will return both times
 local function require(moduleName)
     local module = loadedModules[moduleName]
     if module then
