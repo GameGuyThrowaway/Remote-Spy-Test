@@ -51,7 +51,7 @@ local function logCall(remote: Instance, remoteID: string, returnValueKey: strin
     end
 
     
-    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. argCount .. " | " .. tostring(returnValueKey))
+    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. tostring(returnValueKey) .. " | " .. argCount)
 
     return call
 end
@@ -63,7 +63,7 @@ local function updateReturnValue(returnValueKey: string, returnValue, returnCoun
     callEntry.ReturnCount = returnCount
     returnValuePointerList[returnValueKey] = nil
 
-    rconsolewarn("RETVAL: " .. returnCount .. " | " .. returnValueKey)
+    rconsolewarn("RETVAL: " .. returnValueKey .. " | " .. returnCount)
     return callEntry
 end 
 
