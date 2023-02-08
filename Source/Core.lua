@@ -50,6 +50,7 @@ local function logCall(remote: Instance, remoteID: string, returnValueKey: strin
         table.insert(listEntry.Calls, call)
     end
 
+    rconsolewarn("logged call")
     return call
 end
 
@@ -62,6 +63,7 @@ local function updateReturnValue(returnValueKey: string, returnValue, returnCoun
     callEntry.ReturnCount = returnCount
     returnValuePointerList[returnValueKey] = nil
 
+    rconsolewarn("updated rv")
     return callEntry, remoteID
 end 
 
@@ -163,12 +165,16 @@ do -- initialize
 
     -- backend events 
     backend.EventPipe:ListenToEvent('onRemoteCall', function(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack) 
+        rconsolewarn("recv call")
         local call = logCall(remote, remoteID, returnValueKey, callingScript, callStack, args, argCount)
         interface.EventPipe:Fire('onNewCall', remoteID, call)
+        rconsolewarn("sent call")
     end)
     backend.EventPipe:ListenToEvent('onReturnValueUpdated', function(returnData, returnCount: number, returnKey: string) 
+        rconsolewarn("recv rv")
         local call, remoteID = updateReturnValue(returnKey, returnData, returnCount)
         interface.EventPipe:Fire('onReturnValueUpdated', remoteID, call)
+        rconsolewarn("sent rv")
     end)
 
     settingsModule.loadSettings()

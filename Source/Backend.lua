@@ -37,6 +37,7 @@ argChannel:Connect(function(...)
     local callType = metadata[1]
 
     task_spawn(function(...)
+        rconsolewarn("sending data")
         EventPipe:Fire(callType, {...}, select("#", ...), unpack(metadata, 2, #metadata))
     end, ...)
 
@@ -505,6 +506,8 @@ function backendModule.setupSignals(TaskSignal)
     end)
     
     backendModule.EventPipe = EventPipe
+
+    rconsolewarn("setup backend signals")
 end
 
 return backendModule
