@@ -3,7 +3,6 @@
     -- I should probably add more sanity checks for basic stuff, but I figure most of this stuff should be impossible to break in real world conditions, so the only way it would fail the sanity check is if I wrote the code wrong, in which case might as well error
     
     -- Incoming data should be completely safe because it was passed through a bindable (SynSignal)
-    -- Need to rewrite Backend.lua partiallySanitizeData to be a full data sanitation (cloneref instances, cyclic check, stack overflow check, convert illegal indices)
 ]]
 
 local require = ...
@@ -83,7 +82,7 @@ do -- initialize
 
     -- special case for updating callstack limit (needs to be sent to all lua states)
     interface.EventPipe:ListenToEvent('onCallStackLimitChanged', function(newLimit: number)
-        backend.sendCommand("updateCallStackLimit", newLimit)
+        backend.EventPipe:Fire("updateCallStackLimit", newLimit)
     end)
 
     -- interface requests
@@ -143,9 +142,7 @@ do -- initialize
         else
             local invokeServer = remote.InvokeServer
             for _ = 1, amount do
-                task_spawn(function()
-                    invokeServer(remote, unpack(call.Args, 1, call.ArgCount))
-                end)
+                task_spawn(invokeServer, remote, unpack(call.Args, 1, call.ArgCount))
             end
         end
     end)

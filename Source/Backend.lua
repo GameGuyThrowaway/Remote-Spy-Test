@@ -2,7 +2,7 @@ local backendModule = {}
 
 local task_spawn = task.spawn
 
-local blockedList, ignoredList -- initialize variables, later to be used to point to the real tables
+local blockedList, ignoredList, callStackLimit -- initialize variables, later to be used to point to the real values
 local metadata -- this is used to store metadata while the args are still being sent, due to a BindableEvent limitation, I need to split metadata from args
 local EventPipe
 
@@ -475,32 +475,34 @@ end
 local currentChannelNumber = 0 -- use this to make "channelKeys" aka a unique identifier for each channel, 0 != "0"
 local function handleActor(actor: Actor)
     currentChannelNumber += 1
-    syn.run_on_actor(actor, hookCode, argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber.. "|" .. CallStackLimit)
+    syn.run_on_actor(actor, hookCode, argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber.. "|" .. callStackLimit)
 end
 
 function backendModule.initiateModule(BlockedList, IgnoredList, CallStackLimit)
     ignoredList = IgnoredList
     blockedList = BlockedList
+    callStackLimit = CallStackLimit
 
     syn.on_actor_created:Connect(handleActor)
 
-    loadstring(hookCode)(argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber .. "|" .. CallStackLimit) -- load the global state (channel 0)
+    loadstring(hookCode)(argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber .. "|" .. callStackLimit) -- load the global state (channel 0)
     for _, v in next, getactors() do
         handleActor(v)
     end
 end
 
-function backendModule.sendCommand(command: string, ...)
-    mainChannel:Fire("0", "-1", command, ...)
-end
-
-
 function backendModule.setupSignals(TaskSignal)
     assert(not EventPipe, "Signals Already Setup")
     EventPipe = TaskSignal.new({
         "onRemoteCall",
-        "onReturnValueUpdated"
+        "onReturnValueUpdated",
+        "updateCallStackLimit"
     })
+
+    EventPipe:ListenToEvent("updateCallStackLimit", function(newLimit: number)
+        callStackLimit = newLimit
+        mainChannel:Fire("0", "-1", "updateCallStackLimit", newLimit)
+    end)
     
     backendModule.EventPipe = EventPipe
 end
