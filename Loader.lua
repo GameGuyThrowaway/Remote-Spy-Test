@@ -7,10 +7,16 @@ local function require(moduleName)
     if module then
         return module
     else
-        local newModule = loadstring(game:HttpGetAsync(mainSourceFolder .. moduleName), moduleName)()
+        local str = game:HttpGetAsync(mainSourceFolder .. moduleName)
+        assert(str, "MODULE NOT FOUND")
+
+        local func, err = loadstring(str, moduleName)
+        assert(func, err)
+        
+        local newModule = func()
         loadedModules[moduleName] = newModule
         return newModule
     end
 end
 
-loadstring(game:HttpGetAsync(coreModule))(require) -- load core, passing require function
+loadstring(game:HttpGetAsync(coreModule), "Core.lua")(require) -- load core, passing require function
