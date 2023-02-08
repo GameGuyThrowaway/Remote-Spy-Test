@@ -6,8 +6,10 @@ local blockedList, ignoredList -- initialize variables, later to be used to poin
 local metadata -- this is used to store metadata while the args are still being sent, due to a BindableEvent limitation, I need to split metadata from args
 local EventPipe
 
-local mainChannelID: string, argChannelID: string
-local mainChannel: SynSignal, argChannel: SynSignal
+local mainChannelID: string
+local argChannelID: string
+local mainChannel: SynSignal
+local argChannel: SynSignal
 
 mainChannelID, mainChannel = syn.create_comm_channel()
 argChannelID, argChannel = syn.create_comm_channel()
