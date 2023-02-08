@@ -37,7 +37,6 @@ argChannel:Connect(function(...)
     local callType = metadata[1]
 
     task_spawn(function(...)
-        rconsolewarn("sending data")
         EventPipe:Fire(callType, {...}, select("#", ...), unpack(metadata, 2, #metadata))
     end, ...)
 
@@ -302,7 +301,7 @@ if not _G.remoteSpyHookedState then
                     local success, deSanitizePaths = sanitizeData(data, -1)
                     if success then
                         local scr = getcallingscript()
-                        mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
+                        mainChannel:Fire(channelKey, 0, "sendMetadata", "onRemoteCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
                         argChannel:Fire(unpack(data, 1, argSize))
                     end
                     desanitizeData(deSanitizePaths)
@@ -340,7 +339,7 @@ if not _G.remoteSpyHookedState then
                     local success, deSanitizePaths = sanitizeData(data, -1)
                     if success then
                         local scr = getcallingscript()
-                        mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
+                        mainChannel:Fire(channelKey, 0, "sendMetadata", "onRemoteCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
                         argChannel:Fire(unpack(data, 1, argSize))
                         desanitizeData(deSanitizePaths)
 
@@ -352,7 +351,7 @@ if not _G.remoteSpyHookedState then
                             task_spawn(function(...)
                                 local returnData, returnDataSize = processReturnValue(oldInvokeServer(remote, ...))
                                 local desanitizeReturnData = partiallySanitizeData(returnData)
-                                mainChannel:Fire(channelKey, 0, "sendMetadata", "updateReturnValue", returnKey)
+                                mainChannel:Fire(channelKey, 0, "sendMetadata", "onReturnValueUpdated", returnKey)
                                 argChannel:Fire(unpack(returnData, 1, returnDataSize))
                                 desanitizeData(desanitizeReturnData)
                                 coroutine_resume(thread, unpack(returnData, 1, returnDataSize))
@@ -402,7 +401,7 @@ if not _G.remoteSpyHookedState then
                         
                         if success then
                             local scr = getcallingscript()
-                            mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
+                            mainChannel:Fire(channelKey, 0, "sendMetadata", "onRemoteCall", cloneRemote, remoteID, nil, scr and cloneref(scr), createCallStack(2))
                             argChannel:Fire(unpack(data, 1, argSize))
                         end
                         desanitizeData(deSanitizePaths)
@@ -429,7 +428,7 @@ if not _G.remoteSpyHookedState then
                         local success, deSanitizePaths = sanitizeData(data, -1)
                         if success then
                             local scr = getcallingscript()
-                            mainChannel:Fire(channelKey, 0, "sendMetadata", "addCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
+                            mainChannel:Fire(channelKey, 0, "sendMetadata", "onRemoteCall", cloneRemote, remoteID, returnKey, scr and cloneref(scr), createCallStack(2))
                             argChannel:Fire(unpack(data, 1, argSize))
                             desanitizeData(deSanitizePaths)
                     
@@ -442,7 +441,7 @@ if not _G.remoteSpyHookedState then
                                     setnamecallmethod(namecallMethod)
                                     local returnData, returnDataSize: number = processReturnValue(oldInvokeServer(remote, ...))
                                     local desanitizeReturnData = partiallySanitizeData(returnData)
-                                    mainChannel:Fire(channelKey, 0, "sendMetadata", "updateReturnValue", returnKey)
+                                    mainChannel:Fire(channelKey, 0, "sendMetadata", "onReturnValueUpdated", returnKey)
                                     argChannel:Fire(unpack(returnData, 1, returnDataSize))
                                     desanitizeData(desanitizeReturnData)
                                     coroutine_resume(thread, unpack(returnData, 1, returnDataSize))
@@ -506,8 +505,6 @@ function backendModule.setupSignals(TaskSignal)
     end)
     
     backendModule.EventPipe = EventPipe
-
-    rconsolewarn("setup backend signals")
 end
 
 return backendModule
