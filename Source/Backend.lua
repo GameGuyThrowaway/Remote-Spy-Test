@@ -1,27 +1,15 @@
-local Backend = {}
+local backendModule = {}
 
 local task_spawn = task.spawn
 
 local blockedList, ignoredList -- initialize variables, later to be used to point to the real tables
-
-local addCall2, updateReturnValue2
-
-local function addCall(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack)
-    -- send to core module here, or make addCall be in core module
-    addCall2(remote, remoteID, returnValueKey, callingScript, callStack, args, argCount)
-end
-local function updateReturnValue(returnValue, returnCount: number, returnValueKey: string)
-    updateReturnValue2(returnValueKey, returnValue, returnCount)
-end
-
 local metadata -- this is used to store metadata while the args are still being sent, due to a BindableEvent limitation, I need to split metadata from args
+local EventPipe
 
-local mainChannelID: string
-local mainChannel: SynSignal
+local mainChannelID: string, argChannelID: string
+local mainChannel: SynSignal, argChannel: SynSignal
+
 mainChannelID, mainChannel = syn.create_comm_channel()
-
-local argChannelID: string
-local argChannel: SynSignal
 argChannelID, argChannel = syn.create_comm_channel()
 
 local commands = {
@@ -45,13 +33,11 @@ end)
 argChannel:Connect(function(...)
     assert(metadata, "FATAL ERROR, REPORT IMMEDIATELY")
     local callType = metadata[1]
-    if callType == "addCall" then
-        addCall({...}, select("#", ...), unpack(metadata, 2, #metadata))
-    elseif callType == "updateReturnValue" then
-        updateReturnValue({...}, select("#", ...), unpack(metadata, 2, #metadata))
-    else
-        error("FATAL ERROR2, REPORT IMMEDIATELY")
-    end
+
+    task_spawn(function(...)
+        EventPipe:Fire(callType, {...}, select("#", ...), unpack(metadata, 2, #metadata))
+    end, ...)
+
     metadata = nil
 end)
 
@@ -490,11 +476,9 @@ local function handleActor(actor: Actor)
     syn.run_on_actor(actor, hookCode, argChannelID .. "|" .. mainChannelID .. "|" .. currentChannelNumber.. "|" .. CallStackLimit)
 end
 
-function Backend.initiateModule(BlockedList, IgnoredList, CallStackLimit, lgc, urv)
+function backendModule.initiateModule(BlockedList, IgnoredList, CallStackLimit)
     ignoredList = IgnoredList
     blockedList = BlockedList
-    addCall2 = lgc
-    updateReturnValue2 = urv
 
     syn.on_actor_created:Connect(handleActor)
 
@@ -504,8 +488,19 @@ function Backend.initiateModule(BlockedList, IgnoredList, CallStackLimit, lgc, u
     end
 end
 
-function Backend.sendCommand(command: string, ...)
+function backendModule.sendCommand(command: string, ...)
     mainChannel:Fire("0", "-1", command, ...)
 end
 
-return Backend
+
+function backendModule.setupSignals(TaskSignal)
+    assert(not EventPipe, "Signals Already Setup")
+    EventPipe = TaskSignal.new({
+        "onRemoteCall",
+        "onReturnValueUpdated"
+    })
+    
+    backendModule.EventPipe = EventPipe
+end
+
+return backendModule

@@ -400,8 +400,8 @@ end
 
 
 
-function PseudocodeGenerator.initiateModule(settingsModule)
-    Settings = settingsModule.Settings
+function PseudocodeGenerator.initiateModule(settings)
+    Settings = settings
     InlineSettings = Settings.PseudocodeInlining
     CallStackSettings = Settings.CallStackOptions
 
@@ -427,7 +427,7 @@ end
 
 PseudocodeGenerator.getInstancePath = getInstancePath
 
-function PseudocodeGenerator.generatePseudocode(remote: Instance, call)
+function PseudocodeGenerator.generateCode(remote: Instance, call)
     local watermark = Settings.PseudocodeWatermark and watermarkString or ""
 
     local pathStr = getInstancePath(remote)
@@ -597,7 +597,7 @@ function PseudocodeGenerator.generatePseudocode(remote: Instance, call)
     end
 end
 
-function PseudocodeGenerator.generatePseudoCallStack(callStack)
+function PseudocodeGenerator.generateCallStack(callStack)
     local callStackString = ""
     if Settings.PseudocodeWatermark then
         callStackString ..= watermarkString
@@ -625,5 +625,50 @@ function PseudocodeGenerator.generatePseudoCallStack(callStack)
     
     return (str_sub(callStackString, 1, -2) .. "\n}") -- get rid of the last "," and replace with \n}
 end
+
+function PseudocodeGenerator.generateReturnValue(returnValue)
+    local watermark = Settings.PseudocodeWatermark and watermarkString or ""
+
+    return watermark .. "local pseudoReturnValue = " .. tableToString(returnValue, false, true)
+end
+
+--[[
+PseudocodeGenerator.initiateModule({
+    FireServer = true,
+    InvokeServer = true,
+
+    GetCallStack = false,
+    CallStackSizeLimit = 10,
+    MakeCallingScriptUseCallStack = false,
+    CallStackOptions = {
+        Script = true,
+        Type = true,
+        LineNumber = true,
+        FunctionName = true,
+
+        ParameterCount = false,
+        IsVararg = false,
+        UpvalueCount = false
+    },
+
+    PseudocodeLuaUTypes = false,
+    PseudocodeWatermark = true,
+    PseudocodeFormatTables = true,
+    PsuedocodeHiddenNils = false,
+    PseudocodeInlining = {
+        boolean = false,
+        number = false,
+        string = false,
+        table = true,
+        userdata = true,
+
+        Remote = false,
+        HiddenNils = false
+    }
+})
+
+local str = PseudocodeGenerator.generatePseudoCallStack(_G.test)
+setclipboard(str)
+]]
 
 return PseudocodeGenerator

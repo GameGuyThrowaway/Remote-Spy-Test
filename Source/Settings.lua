@@ -6,7 +6,6 @@ local defaultSettings = {
     FireServer = true,
     InvokeServer = true,
 
-    GetCallStack = false,
     CallStackSizeLimit = 10,
     MakeCallingScriptUseCallStack = false,
     CallStackOptions = {

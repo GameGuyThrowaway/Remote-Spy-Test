@@ -7,10 +7,11 @@
 ]]
 
 local require = ...
---local interface = require("Interface.lua")
+local interface = require("Interface.lua")
 local backend = require("Backend.lua")
 local pseudocodeGenerator = require("PseudocodeGenerator.lua")
 local settingsModule = require("Settings.lua")
+local signalModule = require("TaskSignal.lua")
 
 local task_spawn = task.spawn
 local clear_table = table.clear
@@ -32,7 +33,7 @@ local function logCall(remote: Instance, remoteID: string, returnValueKey: strin
     local listEntry = callList[remoteID]
 
     if returnValueKey then
-        returnValuePointerList[returnValueKey] = call
+        returnValuePointerList[returnValueKey] = { Call = call, RemoteID = remoteID }
     end
 
     if not listEntry then
@@ -50,38 +51,25 @@ local function logCall(remote: Instance, remoteID: string, returnValueKey: strin
         table.insert(listEntry.Calls, call)
     end
 
-    
-    rconsolewarn("NEW CALL: " .. remote:GetFullName() .. " : " .. tostring(returnValueKey) .. " | " .. argCount)
-
     return call
 end
 
 local function updateReturnValue(returnValueKey: string, returnValue, returnCount: number)
-    local callEntry = returnValuePointerList[returnValueKey]
+    local returnEntry = returnValuePointerList[returnValueKey]
+    local callEntry = returnEntry.call
+    local remoteID = returnEntry.RemoteID
 
     callEntry.ReturnValue = returnValue
     callEntry.ReturnCount = returnCount
     returnValuePointerList[returnValueKey] = nil
 
-    rconsolewarn("RETVAL: " .. returnValueKey .. " | " .. returnCount)
-    return callEntry
+    return callEntry, remoteID
 end 
 
 do -- initialize
-    --[[
-    -- send data to modules (could swap this out with just a function call because it isn't object oriented) 
-    interface.EventPipe:ListenToEvent('onGetRemoteList', function() 
-        return remoteList
-    end)
-    interface.EventPipe:ListenToEvent('onGetBlockedList', function() 
-        return blockedList
-    end)
-    interface.EventPipe:ListenToEvent('onGetIgnoredList', function() 
-        return ignoredList
-    end)
-    interface.EventPipe:ListenToEvent('onGetSettings', function() 
-        return settingsModule.Settings
-    end)
+
+    interface.setupSignals(signalModule)
+    backend.setupSignals(signalModule)
 
     -- block event, unnecessary if it gets the list passed directly
     interface.EventPipe:ListenToEvent('onRemoteBlocked', function(remoteID: string, status: boolean) 
@@ -101,22 +89,64 @@ do -- initialize
     -- interface requests
     interface.EventPipe:ListenToEvent('generatePseudocode', function(remoteID: string, callIndex: number) 
         local remoteInfo = callList[remoteID]
-        return pseudocodeGenerator.generatePseudocode(remoteInfo.Remote, remoteInfo.Calls[callIndex])
+        local call = remoteInfo and remoteInfo.Calls[callIndex]
+        if call then
+            return pseudocodeGenerator.generateCode(remoteInfo.Remote, call)
+        else
+            return false
+        end
     end)
     interface.EventPipe:ListenToEvent('generatePseudoCallStack', function(remoteID: string, callIndex: number)
-        return pseudocodeGenerator.generatePseudoCallStack(callList[remoteID].Calls[callIndex].CallStack)
+        return pseudocodeGenerator.generateCallStack(callList[remoteID].Calls[callIndex].CallStack)
     end)
-    interface.EventPipe:ListenToEvent('repeatCall', function(remoteID: string, callIndex: number)
+    interface.EventPipe:ListenToEvent('generatePseudoReturnValue', function(remoteID: string, callIndex: number)
+        return pseudocodeGenerator.generateReturnValue(callList[remoteID].Calls[callIndex].ReturnValue)
+    end)
+    interface.EventPipe:ListenToEvent('getCallingScriptPath', function(remoteID: string, callIndex: number)
+        local remoteInfo = callList[remoteID]
+        local call = remoteInfo and remoteInfo.Calls[callIndex]
+        if call and call.CallingScript then
+            return pseudocodeGenerator.getInstancePath(call.CallingScript)
+        else
+            return false
+        end
+    end)
+    interface.EventPipe:ListenToEvent('decompileCallingScript', function(remoteID: string, callIndex: number)
+        local remoteInfo = callList[remoteID]
+        local call = remoteInfo and remoteInfo.Calls[callIndex]
+        if call and call.CallingScript then
+            return decompile(call.CallingScript)
+        else
+            return false
+        end
+    end)
+    interface.EventPipe:ListenToEvent('getRemotePath', function(remoteID: string)
+        local remoteInfo = callList[remoteID]
+        if remoteInfo then
+            return pseudocodeGenerator.getInstancePath(remoteInfo.Remote)
+        else
+            return false
+        end
+    end)
+    interface.EventPipe:ListenToEvent('repeatCall', function(remoteID: string, callIndex: number, amount: number)
         local remoteInfo = callList[remoteID]
         local remote = remoteInfo.Remote
         local call = remoteInfo.Calls[callIndex]
+
+        amount = amount or 1
         
         if remote.ClassName == "RemoteEvent" then
-            remote:FireServer(unpack(call.Args, 1, call.ArgCount))
+            local fireServer = remote.FireServer
+            for _ = 1, amount do
+                fireServer(remote, unpack(call.Args, 1, call.ArgCount))
+            end
         else
-            task_spawn(function()
-                remote:InvokeServer(unpack(call.Args, 1, call.ArgCount))
-            end)
+            local invokeServer = remote.InvokeServer
+            for _ = 1, amount do
+                task_spawn(function()
+                    invokeServer(remote, unpack(call.Args, 1, call.ArgCount))
+                end)
+            end
         end
     end)
     interface.EventPipe:ListenToEvent('clearRemoteCalls', function(remoteID: string)
@@ -137,15 +167,15 @@ do -- initialize
     -- backend events 
     backend.EventPipe:ListenToEvent('onRemoteCall', function(args, argCount: number, remote: Instance, remoteID: string, returnValueKey: string, callingScript: Instance, callStack) 
         local call = logCall(remote, remoteID, returnValueKey, callingScript, callStack, args, argCount)
-        interface.EventPipe:Fire('onNewCall', call)
+        interface.EventPipe:Fire('onNewCall', remoteID, call)
     end)
-    backend.EventPipe:ListenToEvent('onReturnValueUpdated', function(returnData, returnCount:number, returnKey: string) 
-        local call = updateReturnValue(returnKey, returnData, returnCount)
-        interface.EventPipe:Fire('onReturnValueUpdated', call)
+    backend.EventPipe:ListenToEvent('onReturnValueUpdated', function(returnData, returnCount: number, returnKey: string) 
+        local call, remoteID = updateReturnValue(returnKey, returnData, returnCount)
+        interface.EventPipe:Fire('onReturnValueUpdated', remoteID, call)
     end)
-    ]] -- EventPipe not added yet
 
     settingsModule.loadSettings()
-    pseudocodeGenerator.initiateModule(settingsModule)
-    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit, logCall, updateReturnValue)
+    interface.initiateModuleModule(remoteList, blockedList, ignoredList, settingsModule.Settings)
+    pseudocodeGenerator.initiateModule(settingsModule.Settings)
+    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit)
 end
