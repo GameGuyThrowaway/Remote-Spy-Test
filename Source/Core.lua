@@ -175,7 +175,7 @@ do -- initialize
     end)
 
     settingsModule.loadSettings()
-    interface.initiateModuleModule(remoteList, blockedList, ignoredList, settingsModule.Settings)
+    interface.initiateModule(remoteList, blockedList, ignoredList, settingsModule.Settings)
     pseudocodeGenerator.initiateModule(settingsModule.Settings)
     backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit)
 end
