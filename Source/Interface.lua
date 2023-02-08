@@ -1,6 +1,13 @@
 local interfaceModule = {}
 
-local EventPipe
+local EventPipe, RemoteList, BlockList, IgnoreList, Settings
+
+function interfaceModule.initiateModule(remoteList, blockList, ignoreList, settings)
+    RemoteList = remoteList
+    BlockList = blockList
+    IgnoreList = ignoreList
+    Settings = settings
+end
 
 function interfaceModule.setupSignals(TaskSignal)
     assert(not EventPipe, "Signals Already Setup")
