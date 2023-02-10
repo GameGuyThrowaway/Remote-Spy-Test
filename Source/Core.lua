@@ -5,12 +5,13 @@
     -- Incoming data should be completely safe because it was passed through a bindable (SynSignal)
 ]]
 
-local require = ...
+local mainSourceFolder, require = ...
 local interface = require("Interface.lua")
 local backend = require("Backend.lua")
 local pseudocodeGenerator = require("PseudocodeGenerator.lua")
 local settingsModule = require("Settings.lua")
 local signalModule = require("TaskSignal.lua")
+local hookCode = game:HttpGetAsync(mainSourceFolder .. "Hooks.lua")
 
 local task_spawn = task.spawn
 local clear_table = table.clear
@@ -174,5 +175,5 @@ do -- initialize
     settingsModule.loadSettings()
     interface.initiateModule(remoteList, blockedList, ignoredList, settingsModule.Settings)
     pseudocodeGenerator.initiateModule(settingsModule.Settings)
-    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit)
+    backend.initiateModule(blockedList, ignoredList, settingsModule.Settings.CallStackSizeLimit, hookCode)
 end

@@ -19,4 +19,4 @@ local function require(moduleName)
     end
 end
 
-loadstring(game:HttpGetAsync(coreModule), "Core.lua")(require) -- load core, passing require function
+loadstring(game:HttpGetAsync(coreModule), "Core.lua")(mainSourceFolder, require) -- load core, passing require function
